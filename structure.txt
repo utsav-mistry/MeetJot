@@ -1,0 +1,128 @@
+MeetJot - Project Structure
+
+Goal
+- Electron desktop app (React renderer) + local Python FastAPI sidecar
+- Focus on: UI shell, local API bridge, database, integrations, approval workflow
+- AI/STT/LLM modules exist in-repo but are not part of current development scope
+
+Repository layout (proposed)
+/
+  README.md
+  COOKBOOK.md
+  structure.txt
+
+Scope notes
+- We keep AI/models-related files in the structure so another dev can implement them.
+- For current development, we focus on: frontend UI, backend API/services, integrations, and SQLite.
+- AI modules should be treated as placeholders/stubs until implemented by the AI dev.
+
+  /apps
+    /desktop                     # Electron + React + Tailwind (UI + OS integration)
+      package.json
+      vite.config.*
+      tsconfig.json
+
+      /electron                  # Electron main process
+        main.ts                  # createWindow(), tray, spawn backend, lifecycle
+        preload.ts               # safe IPC bridge (contextIsolation)
+        ipc.ts                   # typed IPC channels (optional)
+
+      /src                       # React renderer
+        main.tsx
+        App.tsx
+        /ui                      # shared UI components (buttons, modals, toasts)
+        /pages                   # routes/screens
+          Dashboard.tsx          # review deck of draft actions
+          Settings.tsx           # credentials + app preferences
+          Transcript.tsx         # transcript viewer (non-AI: display only)
+        /features
+          actions/               # draft/approve/reject flow
+          integrations/          # jira/google credential screens
+        /lib
+          apiClient.ts           # fetch wrapper for localhost backend
+          types.ts               # shared types (ActionDraft, ActionStatus, etc.)
+          storage.ts             # renderer-side persistence (optional)
+
+      /assets
+
+    /backend                     # Python FastAPI sidecar service (non-AI)
+      pyproject.toml or requirements.txt
+      main.py                    # FastAPI entrypoint
+
+      /meetjot
+        __init__.py
+        /api
+          routes_health.py       # GET /health
+          routes_actions.py      # CRUD + approve/reject
+          routes_settings.py     # store/read user settings
+          routes_integrations.py # verify creds (JIRA/GCal)
+        /ai                       # OUT OF SCOPE (AI dev owns this)
+          __init__.py
+          stt.py                  # speech-to-text orchestration (placeholder)
+          llm.py                  # extraction/reasoning orchestration (placeholder)
+          prompts.py              # system/user prompts (placeholder)
+          schemas.py              # AI output schemas (placeholder)
+          providers/
+            groq_client.py        # provider client wrapper (placeholder)
+          /models                 # OUT OF SCOPE (AI dev owns this)
+            __init__.py
+            action_classifier.py  # action classification model (placeholder)
+            intent_recognizer.py  # intent recognition model (placeholder)
+          /pipelines              # OUT OF SCOPE (AI dev owns this)
+            __init__.py
+            action_execution.py   # action execution pipeline (placeholder)
+            transcript_analysis.py # transcript analysis pipeline (placeholder)
+        /core
+          config.py              # env + app data paths
+          logging.py
+          errors.py
+        /db
+          connection.py          # SQLite connection/engine
+          migrations.py          # create tables
+          repo_actions.py        # persistence layer
+          repo_settings.py
+        /domain
+          models.py              # Pydantic models + enums
+        /integrations
+          jira_client.py         # create issue (no AI)
+          gcal_client.py         # create calendar event (no AI)
+        /services
+          actions_service.py     # approve/execute workflow
+          settings_service.py
+
+  /shared                         # optional: types/schemas used by both sides
+
+  /scripts                        # dev/build helper scripts
+
+Data flow (non-AI)
+- Renderer shows a "Review Deck" of draft actions stored in SQLite.
+- Renderer calls backend over HTTP (localhost) to:
+  - list drafts
+  - edit drafts
+  - approve/reject drafts
+  - on approve: backend executes integration call (JIRA/GCal) and persists status
+
+SQLite (baseline)
+- actions
+  - id (uuid)
+  - status (PENDING|APPROVED|REJECTED|ERROR)
+  - tool_type (JIRA_TICKET|G_CAL_EVENT)
+  - draft_payload (json)
+  - final_payload (json)
+  - created_at (timestamp)
+
+Local paths (Windows)
+- App data: %APPDATA%/MeetJot/
+- DB file: %APPDATA%/MeetJot/MeetJot.db
+
+Dev ergonomics
+- Dev mode starts:
+  - Vite renderer
+  - Electron main
+  - Python FastAPI on localhost:8000
+- Prod build:
+  - Electron builder bundles backend executable (Python frozen separately)
+
+Notes
+- This structure assumes TypeScript for Electron/React and standard FastAPI for Python.
+- We implement the staging/review/execution system now; AI modules are listed above but not implemented in this phase.

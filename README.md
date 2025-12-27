@@ -135,8 +135,7 @@ The installer will be in `dist/MeetJot-Setup-1.0.0.exe`.
 ## Team
 
 * **[Nishit Somani]** - AI Engineering and Optimization (Kaptaan Sahab)
-* **[Vedant Hingu]** - Frontend Design and Database organization
-* **[Hetansh Panchal]** - Database Enginnering and Optimization
+* **[Vedant Hingu]** - Database organization and engineering
 * **[Neel Patel]** - Backend monitoring and tool control
 * **[Utsav Mistry]** - Backend impplememntation and Architecture
 
